@@ -411,6 +411,7 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 **Your Name**
 - GitHub: [deekshithagowda9865](https://github.com/deekshithagowda9865)
+          https://github.com/deekshithagowda9865/vendor-price-tracker
 - LinkedIn: https://www.linkedin.com/in/deekshitha-gowda-02365a384
 - Email: deekshithagowda9865@gmail.com
 
