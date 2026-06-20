@@ -353,37 +353,7 @@ App loads
 
 ---
 
-## 🚀 Deployment
 
-### GitHub Pages (free, recommended)
-
-```bash
-# 1. Push to GitHub
-git add mandibhav.html README.md
-git commit -m "Initial commit"
-git push origin main
-
-# 2. Enable Pages
-# GitHub repo → Settings → Pages → Source → main branch → Save
-
-# 3. Live at:
-# https://your-username.github.io/mandibhav/mandibhav.html
-```
-
-### Netlify (drag and drop)
-
-1. Go to [netlify.com/drop](https://app.netlify.com/drop)
-2. Drag `mandibhav.html` onto the page
-3. Live in 30 seconds at a `.netlify.app` URL
-
-### Vercel
-
-```bash
-npm i -g vercel
-vercel --prod
-```
-
----
 
 ## 🛣️ Roadmap
 
