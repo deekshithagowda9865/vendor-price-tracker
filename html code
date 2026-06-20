@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MandiBhav — Live Mandi Prices</title>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/recharts@2.8.0/umd/Recharts.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f9fafb;color:#111827;min-height:100vh}
+  input,select,textarea,button{font-family:inherit}
+  button{cursor:pointer}
+  .hidden{display:none!important}
+
+  /* NAV */
+  nav{background:#fff;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:100;padding:0 1.5rem}
+  .nav-inner{max-width:1100px;margin:0 auto;height:58px;display:flex;align-items:center;justify-content:space-between}
+  .logo{display:flex;align-items:center;gap:8px;text-decoration:none}
+  .logo-text{font-weight:700;font-size:18px;color:#16a34a}
+  .live-badge{font-size:10px;background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:20px;font-weight:600}
+  .nav-links{display:flex;align-items:center;gap:4px}
+  .nav-btn{padding:6px 14px;border-radius:8px;border:none;background:none;font-size:14px;font-weight:500;color:#374151;cursor:pointer;transition:background .15s}
+  .nav-btn:hover{background:#f3f4f6}
+  .nav-btn.active{color:#16a34a;background:#f0fdf4}
+  .nav-register{background:#16a34a;color:#fff!important;padding:7px 16px;border-radius:8px}
+  .nav-register:hover{background:#15803d!important}
+
+  /* LAYOUT */
+  .page{display:none;max-width:1100px;margin:0 auto;padding:2rem 1.5rem}
+  .page.active{display:block}
+
+  /* STATS ROW */
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:1.5rem}
+  .stat-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:1rem}
+  .stat-icon{font-size:20px;margin-bottom:4px}
+  .stat-val{font-size:22px;font-weight:800;color:#111827}
+  .stat-label{font-size:12px;color:#6b7280;margin-top:2px}
+  .stat-sub{font-size:11px;color:#16a34a;font-weight:500}
+
+  /* FILTERS */
+  .filters{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:1.5rem;align-items:center}
+  .filters select,.filters input{padding:8px 12px;border-radius:8px;border:1px solid #e5e7eb;font-size:14px;background:#fff;color:#374151;outline:none}
+  .filters input{flex:1;min-width:180px}
+  .cat-pills{display:flex;gap:6px;flex-wrap:wrap}
+  .cat-pill{padding:6px 14px;border-radius:20px;border:1px solid #e5e7eb;background:#fff;font-size:13px;font-weight:500;color:#6b7280;transition:all .15s}
+  .cat-pill.active{border-color:#16a34a;background:#f0fdf4;color:#16a34a}
+
+  /* PRICE GRID */
+  .price-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+  .price-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:1rem;cursor:pointer;transition:box-shadow .15s,border-color .15s}
+  .price-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);border-color:#d1d5db}
+  .price-card.selected{border-color:#16a34a;box-shadow:0 0 0 2px #dcfce7}
+  .pc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+  .pc-emoji{font-size:24px}
+  .pc-price{text-align:right}
+  .pc-amount{font-size:22px;font-weight:800;color:#16a34a}
+  .pc-unit{font-size:11px;color:#9ca3af}
+  .pc-name{font-weight:700;font-size:15px;color:#111827}
+  .pc-cat{font-size:12px;color:#6b7280;margin-bottom:8px}
+  .pc-divider{border:none;border-top:1px solid #f3f4f6;margin:8px 0}
+  .pc-mandi{font-size:13px;font-weight:600;color:#374151}
+  .pc-loc{font-size:12px;color:#6b7280;margin-top:2px}
+  .pc-stock{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-top:8px}
+  .stock-available{background:#dcfce7;color:#15803d}
+  .stock-limited{background:#fef3c7;color:#92400e}
+  .stock-out{background:#fee2e2;color:#991b1b}
+  .stock-dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+
+  /* CHART */
+  .chart-box{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:1.25rem;margin-bottom:1.5rem}
+  .chart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+  .chart-title{font-size:15px;font-weight:700;color:#111827}
+  .chart-sub{font-size:12px;color:#6b7280;margin-top:2px}
+  .day-pills{display:flex;gap:6px}
+  .day-pill{padding:4px 12px;border-radius:6px;border:1px solid #e5e7eb;background:#fff;font-size:12px;font-weight:500;color:#6b7280}
+  .day-pill.active{border-color:#16a34a;background:#f0fdf4;color:#16a34a}
+  .chart-area{height:200px;position:relative}
+  .chart-svg{width:100%;height:100%}
+
+  /* COMPARE */
+  .compare-controls{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+  .form-group{flex:1;min-width:140px}
+  .form-label{font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px}
+  .form-input{width:100%;padding:9px 12px;border-radius:8px;border:1px solid #e5e7eb;font-size:14px;outline:none}
+  .btn-primary{padding:9px 24px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600}
+  .btn-primary:hover{background:#15803d}
+  .compare-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.5rem}
+  .cmp-stat{border-radius:10px;padding:1rem;text-align:center}
+  .cmp-val{font-size:20px;font-weight:800}
+  .cmp-label{font-size:12px;margin-top:2px;font-weight:500}
+  .compare-table{background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{padding:11px 14px;text-align:left;font-weight:600;color:#374151;font-size:12px;background:#f9fafb;border-bottom:1px solid #e5e7eb}
+  td{padding:11px 14px;border-bottom:1px solid #f3f4f6}
+  tr:last-child td{border-bottom:none}
+  tr.best-row{background:#f0fdf4}
+  .rank-badge{font-size:16px}
+  .price-cell{font-weight:700;color:#16a34a;font-size:15px}
+  .stock-badge{padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+  .savings-best{color:#15803d;font-weight:600}
+
+  /* ALERTS */
+  .alerts-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+  @media(max-width:640px){.alerts-grid{grid-template-columns:1fr}}
+  .card-box{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:1.5rem}
+  .card-title{font-size:16px;font-weight:700;color:#111827;margin-bottom:1rem}
+  .form-stack{display:flex;flex-direction:column;gap:12px}
+  .alert-item{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:8px;border:1px solid #e5e7eb;background:#f9fafb;margin-bottom:8px}
+  .alert-item.triggered{background:#f0fdf4;border-color:#bbf7d0}
+  .alert-name{font-weight:600;font-size:14px;color:#111827}
+  .alert-detail{font-size:12px;color:#6b7280;margin-top:2px}
+  .triggered-badge{font-size:10px;background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:20px;font-weight:600;margin-left:8px}
+  .del-btn{background:none;border:none;color:#ef4444;font-size:18px;padding:4px 8px}
+  .msg-box{padding:9px 12px;border-radius:6px;font-size:13px;margin-top:4px}
+  .msg-ok{background:#f0fdf4;color:#15803d}
+  .msg-err{background:#fef2f2;color:#dc2626}
+
+  /* DASHBOARD */
+  .dash-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem}
+  .dash-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem}
+  .tabs{display:flex;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:1.5rem}
+  .tab-btn{flex:1;padding:11px;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s}
+  .tab-btn.active{background:#16a34a;color:#fff}
+  .tab-btn:not(.active){background:#fff;color:#374151}
+  .add-form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .add-form .full{grid-column:1/-1}
+  .my-prices-table{background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden}
+
+  /* AUTH */
+  .auth-wrap{min-height:80vh;display:flex;align-items:center;justify-content:center;padding:2rem}
+  .auth-box{width:100%;max-width:420px;background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:2rem}
+  .auth-center{text-align:center;margin-bottom:1.5rem}
+  .auth-icon{font-size:40px}
+  .auth-title{font-size:22px;font-weight:800;color:#111827;margin-top:8px}
+  .auth-sub{color:#6b7280;margin-top:4px;font-size:14px}
+  .auth-form{display:flex;flex-direction:column;gap:14px}
+  .auth-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .auth-link{text-align:center;margin-top:1.25rem;font-size:14px;color:#6b7280}
+  .auth-link a{color:#16a34a;font-weight:600;cursor:pointer;text-decoration:none}
+
+  /* EMPTY / LOADING */
+  .empty{text-align:center;padding:4rem;color:#9ca3af;border:2px dashed #e5e7eb;border-radius:12px}
+  .empty-icon{font-size:36px;margin-bottom:8px}
+  .loading{text-align:center;padding:4rem;color:#9ca3af}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:500;z-index:999;display:none;animation:fadeUp .3s ease}
+  @keyframes fadeUp{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+  /* VENDOR modal */
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:1rem}
+  .modal-bg.open{display:flex}
+  .modal{background:#fff;border-radius:16px;padding:2rem;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+  .modal-title{font-size:18px;font-weight:700;margin-bottom:1.25rem}
+  .modal-close{float:right;background:none;border:none;font-size:22px;color:#6b7280;cursor:pointer;line-height:1}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="nav-inner">
+    <a class="logo" href="#" onclick="showPage('home');return false">
+      <span style="font-size:22px">🥦</span>
+      <span class="logo-text">MandiBhav</span>
+      <span class="live-badge">LIVE</span>
+    </a>
+    <div class="nav-links">
+      <button class="nav-btn active" id="nav-home" onclick="showPage('home')">Price Board</button>
+      <button class="nav-btn" id="nav-compare" onclick="showPage('compare')">Compare</button>
+      <button class="nav-btn" id="nav-alerts" onclick="showPage('alerts')">Alerts</button>
+      <span id="nav-auth-loggedout">
+        <button class="nav-btn" onclick="showPage('login')">Login</button>
+        <button class="nav-btn nav-register" style="color:#fff" onclick="showPage('register')">Register Mandi</button>
+      </span>
+      <span id="nav-auth-loggedin" class="hidden">
+        <button class="nav-btn" id="nav-dashboard" onclick="showPage('dashboard')">Dashboard</button>
+        <button class="nav-btn" onclick="logout()" style="color:#ef4444">Logout</button>
+      </span>
+    </div>
+  </div>
+</nav>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ===== HOME PAGE ===== -->
+<div class="page active" id="page-home">
+  <h1 style="font-size:26px;font-weight:800;margin-bottom:4px">Today's Mandi Prices</h1>
+  <p style="color:#6b7280;margin-bottom:1.5rem">Live vegetable &amp; grocery prices from local mandis. Click any item to see its trend chart.</p>
+
+  <div class="stats-grid" id="home-stats"></div>
+
+  <!-- Chart -->
+  <div class="chart-box hidden" id="chart-container">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title" id="chart-title">Price Trend</div>
+        <div class="chart-sub" id="chart-sub"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="day-pills">
+          <button class="day-pill active" onclick="setChartDays(7,this)">7D</button>
+          <button class="day-pill" onclick="setChartDays(14,this)">14D</button>
+          <button class="day-pill" onclick="setChartDays(30,this)">30D</button>
+        </div>
+        <button onclick="closeChart()" style="background:none;border:none;color:#ef4444;font-size:18px;padding:4px 8px;cursor:pointer">✕</button>
+      </div>
+    </div>
+    <div class="chart-area">
+      <svg class="chart-svg" id="chart-svg" viewBox="0 0 700 200" preserveAspectRatio="none"></svg>
+    </div>
+    <div style="display:flex;gap:16px;margin-top:8px;font-size:12px;color:#6b7280">
+      <span><span style="color:#16a34a;font-weight:600">—</span> Avg Price</span>
+      <span><span style="color:#3b82f6;font-weight:600">- -</span> Min Price</span>
+      <span><span style="color:#ef4444;font-weight:600">- -</span> Max Price</span>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <select id="city-select" onchange="applyFilters()">
+      <option>Bengaluru</option><option>Mumbai</option><option>Delhi</option>
+      <option>Chennai</option><option>Hyderabad</option><option>Pune</option>
+    </select>
+    <input type="text" id="search-input" placeholder="Search item..." oninput="applyFilters()">
+    <div class="cat-pills" id="cat-pills"></div>
+  </div>
+
+  <div id="price-grid" class="price-grid"></div>
+</div>
+
+<!-- ===== COMPARE PAGE ===== -->
+<div class="page" id="page-compare">
+  <h1 style="font-size:26px;font-weight:800;margin-bottom:4px">Compare Prices</h1>
+  <p style="color:#6b7280;margin-bottom:1.5rem">Find the cheapest mandi for any item in your city.</p>
+
+  <div class="compare-controls">
+    <div class="form-group">
+      <label class="form-label">Item</label>
+      <input class="form-input" id="cmp-item" list="item-suggestions" placeholder="e.g. Tomato">
+      <datalist id="item-suggestions"></datalist>
+    </div>
+    <div class="form-group">
+      <label class="form-label">City</label>
+      <select class="form-input" id="cmp-city">
+        <option>Bengaluru</option><option>Mumbai</option><option>Delhi</option>
+        <option>Chennai</option><option>Hyderabad</option><option>Pune</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="runCompare()">Compare →</button>
+  </div>
+
+  <div id="cmp-stats" class="hidden compare-stats"></div>
+  <div id="cmp-result"></div>
+</div>
+
+<!-- ===== ALERTS PAGE ===== -->
+<div class="page" id="page-alerts">
+  <h1 style="font-size:26px;font-weight:800;margin-bottom:4px">Price Alerts</h1>
+  <p style="color:#6b7280;margin-bottom:1.5rem">Set a target price — get flagged when it drops in your city.</p>
+
+  <div class="alerts-grid">
+    <div class="card-box">
+      <div class="card-title">🔔 Create Alert</div>
+      <div class="form-stack">
+        <div>
+          <label class="form-label">Your Email</label>
+          <input class="form-input" style="width:100%" id="al-email" type="email" placeholder="you@example.com">
+        </div>
+        <div>
+          <label class="form-label">Item</label>
+          <input class="form-input" style="width:100%" id="al-item" placeholder="e.g. Tomato">
+        </div>
+        <div>
+          <label class="form-label">City</label>
+          <select class="form-input" style="width:100%" id="al-city">
+            <option>Bengaluru</option><option>Mumbai</option><option>Delhi</option>
+            <option>Chennai</option><option>Hyderabad</option><option>Pune</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Alert when price ≤ ₹</label>
+          <input class="form-input" style="width:100%" id="al-price" type="number" min="1" placeholder="e.g. 30">
+        </div>
+        <div id="al-msg"></div>
+        <button class="btn-primary" style="width:100%;padding:11px" onclick="createAlert()">Set Alert</button>
+      </div>
+    </div>
+
+    <div class="card-box">
+      <div class="card-title">📋 My Alerts</div>
+      <div style="display:flex;gap:8px;margin-bottom:1rem">
+        <input class="form-input" style="flex:1" id="al-fetch-email" type="email" placeholder="Enter email to view alerts">
+        <button class="btn-primary" onclick="fetchAlerts()">View</button>
+      </div>
+      <div id="alerts-list"><p style="color:#9ca3af;font-size:14px;text-align:center;padding:1.5rem 0">Enter your email and click View.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DASHBOARD PAGE ===== -->
+<div class="page" id="page-dashboard">
+  <div class="dash-header">
+    <div>
+      <h1 style="font-size:22px;font-weight:800">Vendor Dashboard</h1>
+      <p style="color:#6b7280;margin-top:4px;font-size:14px" id="dash-subtitle"></p>
+    </div>
+    <button class="btn-primary" onclick="showPage('home')">View Board</button>
+  </div>
+
+  <div class="dash-stats" id="dash-stats"></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-prices" onclick="switchTab('prices')">📋 My Prices</button>
+    <button class="tab-btn" id="tab-add" onclick="switchTab('add')">➕ Add / Update Price</button>
+  </div>
+
+  <div id="tab-content-prices">
+    <div class="my-prices-table" id="my-prices-table"></div>
+  </div>
+
+  <div id="tab-content-add" class="hidden">
+    <div class="card-box">
+      <p style="color:#6b7280;font-size:13px;margin-bottom:1rem">Add a new item or re-post to update today's price.</p>
+      <div class="add-form">
+        <div>
+          <label class="form-label">Item Name</label>
+          <input class="form-input" style="width:100%" id="add-item" placeholder="e.g. Tomato">
+        </div>
+        <div>
+          <label class="form-label">Price per unit (₹)</label>
+          <input class="form-input" style="width:100%" id="add-price" type="number" step="0.1" min="0" placeholder="e.g. 30">
+        </div>
+        <div>
+          <label class="form-label">Category</label>
+          <select class="form-input" style="width:100%" id="add-cat">
+            <option>Vegetables</option><option>Fruits</option><option>Grains</option>
+            <option>Spices</option><option>Dairy</option><option>Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Unit</label>
+          <select class="form-input" style="width:100%" id="add-unit">
+            <option>kg</option><option>dozen</option><option>piece</option>
+            <option>litre</option><option>250g</option><option>500g</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Stock Status</label>
+          <select class="form-input" style="width:100%" id="add-stock">
+            <option value="available">Available</option>
+            <option value="limited">Limited</option>
+            <option value="out_of_stock">Out of Stock</option>
+          </select>
+        </div>
+        <div class="full">
+          <div id="add-msg"></div>
+          <button class="btn-primary full" style="width:100%;padding:11px;margin-top:4px" onclick="publishPrice()">📤 Publish Price</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LOGIN PAGE ===== -->
+<div class="page" id="page-login">
+  <div class="auth-wrap">
+    <div style="width:100%;max-width:420px">
+      <div class="auth-center">
+        <div class="auth-icon">🥦</div>
+        <div class="auth-title">Vendor Login</div>
+        <div class="auth-sub">Sign in to manage your mandi prices</div>
+      </div>
+      <div class="auth-box">
+        <div class="auth-form">
+          <div>
+            <label class="form-label">Email</label>
+            <input class="form-input" style="width:100%" id="login-email" type="email" placeholder="you@example.com">
+          </div>
+          <div>
+            <label class="form-label">Password</label>
+            <input class="form-input" style="width:100%" id="login-password" type="password" placeholder="Your password">
+          </div>
+          <div id="login-msg"></div>
+          <button class="btn-primary" style="width:100%;padding:11px" onclick="doLogin()">Sign In</button>
+        </div>
+        <p class="auth-link">New vendor? <a onclick="showPage('register')">Register your mandi</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== REGISTER PAGE ===== -->
+<div class="page" id="page-register">
+  <div style="max-width:520px;margin:2rem auto">
+    <div class="auth-center">
+      <div class="auth-icon">🏪</div>
+      <div class="auth-title">Register Your Mandi</div>
+      <div class="auth-sub">Join vendors publishing daily prices</div>
+    </div>
+    <div class="auth-box" style="max-width:100%">
+      <div class="auth-form-grid">
+        <div>
+          <label class="form-label">Your Name</label>
+          <input class="form-input" style="width:100%" id="reg-name" placeholder="Ramesh Kumar">
+        </div>
+        <div>
+          <label class="form-label">Mandi Name</label>
+          <input class="form-input" style="width:100%" id="reg-mandi" placeholder="KR Market">
+        </div>
+        <div>
+          <label class="form-label">City</label>
+          <input class="form-input" style="width:100%" id="reg-city" placeholder="Bengaluru">
+        </div>
+        <div>
+          <label class="form-label">Pincode</label>
+          <input class="form-input" style="width:100%" id="reg-pin" placeholder="560002">
+        </div>
+        <div>
+          <label class="form-label">Phone</label>
+          <input class="form-input" style="width:100%" id="reg-phone" placeholder="9876543210">
+        </div>
+        <div>
+          <label class="form-label">Email</label>
+          <input class="form-input" style="width:100%" id="reg-email" type="email" placeholder="you@example.com">
+        </div>
+        <div style="grid-column:1/-1">
+          <label class="form-label">Password</label>
+          <input class="form-input" style="width:100%" id="reg-pass" type="password" placeholder="Min 6 characters">
+        </div>
+        <div style="grid-column:1/-1" id="reg-msg"></div>
+        <div style="grid-column:1/-1">
+          <button class="btn-primary" style="width:100%;padding:11px" onclick="doRegister()">✅ Register &amp; Start Publishing</button>
+        </div>
+      </div>
+      <p class="auth-link">Already registered? <a onclick="showPage('login')">Sign in</a></p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DEMO DATA ────────────────────────────────────────────────────────────────
+const MANDIS = [
+  { id:'v1', name:'Ramesh Kumar', mandiName:'KR Market', city:'Bengaluru', pincode:'560002', phone:'9876543210', email:'ramesh@krmarket.com', password:'password123' },
+  { id:'v2', name:'Suresh Patel', mandiName:'Yeshwanthpur Mandi', city:'Bengaluru', pincode:'560022', phone:'9876543211', email:'suresh@ymandi.com', password:'password123' },
+  { id:'v3', name:'Priya Devi', mandiName:'Jayanagar Mandi', city:'Bengaluru', pincode:'560041', phone:'9876543212', email:'priya@jmandi.com', password:'password123' },
+  { id:'v4', name:'Ahmed Khan', mandiName:'Crawford Market', city:'Mumbai', pincode:'400001', phone:'9876543213', email:'ahmed@crawford.com', password:'password123' },
+  { id:'v5', name:'Sunita Sharma', mandiName:'Azadpur Mandi', city:'Delhi', pincode:'110033', phone:'9876543214', email:'sunita@azadpur.com', password:'password123' }
+];
+
+const BASE_PRICES = {
+  Tomato:30,Onion:25,Potato:20,Carrot:40,Brinjal:35,Capsicum:60,
+  Cabbage:25,Spinach:30,Beans:50,Pumpkin:22,Banana:40,Apple:120,
+  Mango:80,Rice:55,Wheat:35,Turmeric:160,Chilli:90,Milk:58
+};
+
+const CATEGORIES = {
+  Tomato:'Vegetables',Onion:'Vegetables',Potato:'Vegetables',Carrot:'Vegetables',
+  Brinjal:'Vegetables',Capsicum:'Vegetables',Cabbage:'Vegetables',Spinach:'Vegetables',
+  Beans:'Vegetables',Pumpkin:'Vegetables',Banana:'Fruits',Apple:'Fruits',Mango:'Fruits',
+  Rice:'Grains',Wheat:'Grains',Turmeric:'Spices',Chilli:'Spices',Milk:'Dairy'
+};
+
+const EMOJIS = {
+  Vegetables:'🥬',Fruits:'🍎',Grains:'🌾',Spices:'🌶️',Dairy:'🥛',Other:'📦'
+};
+
+// Generate price history (30 days)
+function genPrices() {
+  const prices = [];
+  const today = new Date(); today.setHours(0,0,0,0);
+  MANDIS.forEach(v => {
+    Object.entries(BASE_PRICES).forEach(([item, base]) => {
+      for(let d = 29; d >= 0; d--) {
+        const date = new Date(today); date.setDate(date.getDate() - d);
+        const variation = (Math.random() - 0.5) * base * 0.3;
+        prices.push({
+          id: `${v.id}-${item}-${d}`,
+          vendorId: v.id,
+          item, category: CATEGORIES[item],
+          pricePerKg: Math.max(5, Math.round((base + variation) * 10) / 10),
+          unit: item === 'Milk' ? 'litre' : 'kg',
+          stock: Math.random() > 0.1 ? 'available' : (Math.random() > 0.5 ? 'limited' : 'out_of_stock'),
+          date: new Date(date)
+        });
+      }
+    });
+  });
+  return prices;
+}
+
+// ─── APP STATE ────────────────────────────────────────────────────────────────
+let allPrices = genPrices();
+let vendors = [...MANDIS];
+let alerts = JSON.parse(localStorage.getItem('mandibhav_alerts') || '[]');
+let currentVendor = JSON.parse(localStorage.getItem('mandibhav_vendor') || 'null');
+let selectedItem = null;
+let chartDays = 7;
+let activeCategory = 'All';
+let currentDashTab = 'prices';
+
+function saveAlerts() { localStorage.setItem('mandibhav_alerts', JSON.stringify(alerts)); }
+
+// ─── NAVIGATION ───────────────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const nb = document.getElementById('nav-' + name);
+  if (nb) nb.classList.add('active');
+  if (name === 'home') renderHome();
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'compare') populateItemSuggestions();
+}
+
+function updateAuthNav() {
+  if (currentVendor) {
+    document.getElementById('nav-auth-loggedout').classList.add('hidden');
+    document.getElementById('nav-auth-loggedin').classList.remove('hidden');
+  } else {
+    document.getElementById('nav-auth-loggedout').classList.remove('hidden');
+    document.getElementById('nav-auth-loggedin').classList.add('hidden');
+  }
+}
+
+// ─── HOME ─────────────────────────────────────────────────────────────────────
+const ALL_CATS = ['All','Vegetables','Fruits','Grains','Spices','Dairy','Other'];
+
+function getTodayPrices(city) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  return allPrices.filter(p => {
+    const pd = new Date(p.date); pd.setHours(0,0,0,0);
+    const v = vendors.find(v => v.id === p.vendorId);
+    return pd.getTime() === today.getTime() && v && v.city.toLowerCase() === city.toLowerCase();
+  }).map(p => ({ ...p, vendor: vendors.find(v => v.id === p.vendorId) }));
+}
+
+function renderHome() {
+  renderCatPills();
+  applyFilters();
+}
+
+function renderCatPills() {
+  const el = document.getElementById('cat-pills');
+  el.innerHTML = ALL_CATS.map(c =>
+    `<button class="cat-pill${c === activeCategory ? ' active' : ''}" onclick="setCategory('${c}')">${c}</button>`
+  ).join('');
+}
+
+function setCategory(c) {
+  activeCategory = c;
+  renderCatPills();
+  applyFilters();
+}
+
+function applyFilters() {
+  const city = document.getElementById('city-select').value;
+  const search = document.getElementById('search-input').value.toLowerCase();
+  let prices = getTodayPrices(city);
+  if (activeCategory !== 'All') prices = prices.filter(p => p.category === activeCategory);
+  if (search) prices = prices.filter(p => p.item.toLowerCase().includes(search));
+
+  // Deduplicate: keep cheapest per item per vendor
+  const seen = new Set();
+  const deduped = [];
+  prices.forEach(p => {
+    const key = `${p.vendorId}-${p.item}`;
+    if (!seen.has(key)) { seen.add(key); deduped.push(p); }
+  });
+
+  renderStats(deduped, city);
+  renderGrid(deduped);
+}
+
+function renderStats(prices, city) {
+  const vendorSet = new Set(prices.map(p => p.vendorId));
+  const sorted = [...prices].sort((a,b) => a.pricePerKg - b.pricePerKg);
+  const cheapest = sorted[0];
+  document.getElementById('home-stats').innerHTML = [
+    { icon:'📋', val: prices.length, label:'Prices Listed' },
+    { icon:'🏪', val: vendorSet.size, label:'Active Mandis', sub: city },
+    { icon:'📉', val: cheapest ? `₹${cheapest.pricePerKg}` : '—', label:'Lowest Today', sub: cheapest?.item }
+  ].map(s => `
+    <div class="stat-card">
+      <div class="stat-icon">${s.icon}</div>
+      <div class="stat-val">${s.val}</div>
+      <div class="stat-label">${s.label}</div>
+      ${s.sub ? `<div class="stat-sub">${s.sub}</div>` : ''}
+    </div>`).join('');
+}
+
+function renderGrid(prices) {
+  const el = document.getElementById('price-grid');
+  if (prices.length === 0) {
+    el.innerHTML = `<div class="empty" style="grid-column:1/-1">
+      <div class="empty-icon">🔍</div>
+      <p>No prices found. Try a different city or category.</p>
+    </div>`; return;
+  }
+  el.innerHTML = prices.map(p => {
+    const stockClass = p.stock === 'available' ? 'stock-available' : p.stock === 'limited' ? 'stock-limited' : 'stock-out';
+    const stockLabel = p.stock === 'available' ? 'In Stock' : p.stock === 'limited' ? 'Limited' : 'Out of Stock';
+    const dotColor = p.stock === 'available' ? '#16a34a' : p.stock === 'limited' ? '#d97706' : '#ef4444';
+    const isSelected = selectedItem === p.item ? ' selected' : '';
+    return `<div class="price-card${isSelected}" onclick="selectItem('${p.item}')">
+      <div class="pc-header">
+        <div>
+          <div class="pc-emoji">${EMOJIS[p.category] || '📦'}</div>
+          <div class="pc-name">${p.item}</div>
+          <div class="pc-cat">${p.category}</div>
+        </div>
+        <div class="pc-price">
+          <div class="pc-amount">₹${p.pricePerKg}</div>
+          <div class="pc-unit">per ${p.unit}</div>
+        </div>
+      </div>
+      <hr class="pc-divider">
+      <div class="pc-mandi">🏪 ${p.vendor?.mandiName}</div>
+      <div class="pc-loc">📍 ${p.vendor?.city} · ${p.vendor?.pincode}</div>
+      ${p.vendor?.phone ? `<div class="pc-loc">📞 ${p.vendor.phone}</div>` : ''}
+      <div class="pc-stock ${stockClass}">
+        <span class="stock-dot" style="background:${dotColor}"></span>${stockLabel}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── CHART ────────────────────────────────────────────────────────────────────
+function selectItem(item) {
+  selectedItem = item;
+  document.getElementById('chart-container').classList.remove('hidden');
+  document.getElementById('chart-title').textContent = `📈 ${item} — Price Trend`;
+  const city = document.getElementById('city-select').value;
+  document.getElementById('chart-sub').textContent = `in ${city} · ₹ per unit`;
+  drawChart(item, city, chartDays);
+  applyFilters(); // re-render grid to show selected
+}
+
+function setChartDays(d, btn) {
+  chartDays = d;
+  document.querySelectorAll('.day-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  const city = document.getElementById('city-select').value;
+  if (selectedItem) drawChart(selectedItem, city, d);
+}
+
+function closeChart() {
+  selectedItem = null;
+  document.getElementById('chart-container').classList.add('hidden');
+  applyFilters();
+}
+
+function drawChart(item, city, days) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const since = new Date(today); since.setDate(since.getDate() - days);
+
+  // Group by date
+  const byDate = {};
+  allPrices.forEach(p => {
+    const v = vendors.find(v => v.id === p.vendorId);
+    if (!v || v.city.toLowerCase() !== city.toLowerCase()) return;
+    if (p.item !== item) return;
+    const d = new Date(p.date); d.setHours(0,0,0,0);
+    if (d < since) return;
+    const key = d.toISOString().slice(0,10);
+    if (!byDate[key]) byDate[key] = [];
+    byDate[key].push(p.pricePerKg);
+  });
+
+  const data = Object.entries(byDate).sort((a,b) => a[0].localeCompare(b[0])).map(([date, prices]) => ({
+    date: date.slice(5),
+    avg: prices.reduce((a,b)=>a+b,0)/prices.length,
+    min: Math.min(...prices),
+    max: Math.max(...prices)
+  }));
+
+  if (!data.length) {
+    document.getElementById('chart-svg').innerHTML = `<text x="350" y="100" text-anchor="middle" fill="#9ca3af" font-size="14">No data available</text>`;
+    return;
+  }
+
+  const W=700, H=200, PAD={top:10,right:10,bottom:24,left:36};
+  const allVals = data.flatMap(d=>[d.min,d.max]);
+  const minY = Math.floor(Math.min(...allVals)*0.9);
+  const maxY = Math.ceil(Math.max(...allVals)*1.1);
+
+  function px(i){ return PAD.left + (i/(data.length-1||1))*(W-PAD.left-PAD.right); }
+  function py(v){ return PAD.top + (1-(v-minY)/(maxY-minY||1))*(H-PAD.top-PAD.bottom); }
+
+  const avgPath = data.map((d,i)=>`${i===0?'M':'L'}${px(i)},${py(d.avg)}`).join(' ');
+  const minPath = data.map((d,i)=>`${i===0?'M':'L'}${px(i)},${py(d.min)}`).join(' ');
+  const maxPath = data.map((d,i)=>`${i===0?'M':'L'}${px(i)},${py(d.max)}`).join(' ');
+
+  // Y axis labels
+  const yTicks = [minY, Math.round((minY+maxY)/2), maxY];
+  const yLabels = yTicks.map(t=>`<text x="${PAD.left-4}" y="${py(t)+4}" text-anchor="end" fill="#9ca3af" font-size="10">₹${t}</text>`).join('');
+
+  // X axis labels (show every nth)
+  const step = Math.ceil(data.length/5);
+  const xLabels = data.filter((_,i)=>i%step===0||i===data.length-1).map((d,_,arr)=>{
+    const i = data.indexOf(d);
+    return `<text x="${px(i)}" y="${H-4}" text-anchor="middle" fill="#9ca3af" font-size="10">${d.date}</text>`;
+  }).join('');
+
+  // Grid lines
+  const grid = yTicks.map(t=>`<line x1="${PAD.left}" y1="${py(t)}" x2="${W-PAD.right}" y2="${py(t)}" stroke="#f3f4f6" stroke-width="1"/>`).join('');
+
+  document.getElementById('chart-svg').innerHTML = `
+    ${grid}${yLabels}${xLabels}
+    <path d="${minPath}" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4,2"/>
+    <path d="${maxPath}" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,2"/>
+    <path d="${avgPath}" fill="none" stroke="#16a34a" stroke-width="2"/>
+    ${data.map((d,i)=>`<circle cx="${px(i)}" cy="${py(d.avg)}" r="3" fill="#16a34a"/>`).join('')}
+  `;
+}
+
+// ─── COMPARE ──────────────────────────────────────────────────────────────────
+function populateItemSuggestions() {
+  const items = [...new Set(Object.keys(BASE_PRICES))].sort();
+  document.getElementById('item-suggestions').innerHTML = items.map(i=>`<option value="${i}">`).join('');
+}
+
+function runCompare() {
+  const item = document.getElementById('cmp-item').value.trim();
+  const city = document.getElementById('cmp-city').value;
+  if (!item) { showToast('Enter an item name'); return; }
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const prices = allPrices.filter(p => {
+    const v = vendors.find(v => v.id === p.vendorId);
+    const pd = new Date(p.date); pd.setHours(0,0,0,0);
+    return p.item.toLowerCase() === item.toLowerCase()
+      && v && v.city.toLowerCase() === city.toLowerCase()
+      && pd.getTime() === today.getTime();
+  }).map(p => ({ ...p, vendor: vendors.find(v => v.id === p.vendorId) }));
+
+  // Deduplicate by vendor
+  const seen = new Set(); const deduped = [];
+  prices.forEach(p => { if(!seen.has(p.vendorId)){seen.add(p.vendorId);deduped.push(p);} });
+  const sorted = deduped.sort((a,b) => a.pricePerKg - b.pricePerKg);
+
+  if (!sorted.length) {
+    document.getElementById('cmp-stats').classList.add('hidden');
+    document.getElementById('cmp-result').innerHTML = `<div class="empty"><div class="empty-icon">🔍</div><p>No prices found for <strong>${item}</strong> in <strong>${city}</strong> today.</p></div>`;
+    return;
+  }
+
+  const minP = sorted[0].pricePerKg;
+  const maxP = sorted[sorted.length-1].pricePerKg;
+  const avgP = (sorted.reduce((a,b)=>a+b.pricePerKg,0)/sorted.length).toFixed(1);
+
+  document.getElementById('cmp-stats').classList.remove('hidden');
+  document.getElementById('cmp-stats').innerHTML = [
+    { label:'Cheapest', val:`₹${minP}`, bg:'#f0fdf4', col:'#16a34a' },
+    { label:'Average',  val:`₹${avgP}`, bg:'#eff6ff', col:'#2563eb' },
+    { label:'Highest',  val:`₹${maxP}`, bg:'#fef2f2', col:'#ef4444' }
+  ].map(s=>`<div class="cmp-stat" style="background:${s.bg}">
+    <div class="cmp-val" style="color:${s.col}">${s.val}</div>
+    <div class="cmp-label" style="color:#6b7280">${s.label} per unit</div>
+  </div>`).join('');
+
+  document.getElementById('cmp-result').innerHTML = `<div class="compare-table">
+    <table>
+      <thead><tr>
+        <th>Rank</th><th>Mandi</th><th>Location</th><th>Phone</th>
+        <th>Price/unit</th><th>Stock</th><th>vs Cheapest</th>
+      </tr></thead>
+      <tbody>
+        ${sorted.map((r,i)=>{
+          const sc = r.stock==='available'?'background:#dcfce7;color:#15803d':r.stock==='limited'?'background:#fef3c7;color:#92400e':'background:#fee2e2;color:#991b1b';
+          const rank = i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
+          return `<tr${i===0?' class="best-row"':''}>
+            <td>${rank}</td>
+            <td style="font-weight:600">${r.vendor?.mandiName}</td>
+            <td style="color:#6b7280">${r.vendor?.city}, ${r.vendor?.pincode}</td>
+            <td style="color:#6b7280">${r.vendor?.phone||'—'}</td>
+            <td class="price-cell">₹${r.pricePerKg}</td>
+            <td><span class="stock-badge" style="${sc}">${r.stock.replace('_',' ')}</span></td>
+            <td${i===0?' class="savings-best"':' style="color:#6b7280"'}>${i===0?'Best Deal!':'₹'+(r.pricePerKg-minP).toFixed(1)+' more'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+// ─── ALERTS ───────────────────────────────────────────────────────────────────
+function createAlert() {
+  const email = document.getElementById('al-email').value.trim();
+  const item = document.getElementById('al-item').value.trim();
+  const city = document.getElementById('al-city').value;
+  const targetPrice = parseFloat(document.getElementById('al-price').value);
+  const msgEl = document.getElementById('al-msg');
+
+  if (!email || !item || !targetPrice) {
+    msgEl.innerHTML = `<div class="msg-box msg-err">Please fill all fields.</div>`; return;
+  }
+
+  // Check if already triggered (any price today <= target)
+  const today = new Date(); today.setHours(0,0,0,0);
+  const triggered = allPrices.some(p => {
+    const v = vendors.find(v=>v.id===p.vendorId);
+    const pd = new Date(p.date); pd.setHours(0,0,0,0);
+    return p.item.toLowerCase()===item.toLowerCase() && v && v.city.toLowerCase()===city.toLowerCase()
+      && pd.getTime()===today.getTime() && p.pricePerKg <= targetPrice;
+  });
+
+  const alert = { id: Date.now().toString(), userEmail:email, item, city, targetPrice, isTriggered:triggered, createdAt:new Date().toISOString() };
+  alerts.push(alert); saveAlerts();
+  msgEl.innerHTML = `<div class="msg-box msg-ok">✅ Alert created!${triggered?' Price is already at or below your target today!':''}</div>`;
+  document.getElementById('al-item').value = '';
+  document.getElementById('al-price').value = '';
+}
+
+function fetchAlerts() {
+  const email = document.getElementById('al-fetch-email').value.trim();
+  if (!email) { showToast('Enter an email address'); return; }
+  const myAlerts = alerts.filter(a => a.userEmail === email);
+  const el = document.getElementById('alerts-list');
+  if (!myAlerts.length) {
+    el.innerHTML = `<p style="color:#9ca3af;font-size:14px;text-align:center;padding:1.5rem 0">No alerts found for this email.</p>`;
+    return;
+  }
+  el.innerHTML = myAlerts.map(a => `
+    <div class="alert-item${a.isTriggered?' triggered':''}">
+      <div>
+        <div class="alert-name">${a.item} in ${a.city}${a.isTriggered?'<span class="triggered-badge">TRIGGERED ✓</span>':''}</div>
+        <div class="alert-detail">Alert when ≤ ₹${a.targetPrice}/unit</div>
+      </div>
+      <button class="del-btn" onclick="deleteAlert('${a.id}','${email}')">✕</button>
+    </div>`).join('');
+}
+
+function deleteAlert(id, email) {
+  alerts = alerts.filter(a => a.id !== id);
+  saveAlerts();
+  fetchAlerts();
+  // re-set email field
+  document.getElementById('al-fetch-email').value = email;
+}
+
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-password').value;
+  const msgEl = document.getElementById('login-msg');
+  const vendor = vendors.find(v => v.email === email && v.password === pass);
+  if (!vendor) {
+    msgEl.innerHTML = `<div class="msg-box msg-err">Invalid email or password.</div>`; return;
+  }
+  currentVendor = vendor;
+  localStorage.setItem('mandibhav_vendor', JSON.stringify(vendor));
+  updateAuthNav();
+  showToast('Welcome back, ' + vendor.name + '!');
+  showPage('dashboard');
+}
+
+function doRegister() {
+  const name = document.getElementById('reg-name').value.trim();
+  const mandiName = document.getElementById('reg-mandi').value.trim();
+  const city = document.getElementById('reg-city').value.trim();
+  const pincode = document.getElementById('reg-pin').value.trim();
+  const phone = document.getElementById('reg-phone').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-pass').value;
+  const msgEl = document.getElementById('reg-msg');
+
+  if (!name||!mandiName||!city||!email||!password) {
+    msgEl.innerHTML = `<div class="msg-box msg-err">Please fill all required fields.</div>`; return;
+  }
+  if (vendors.find(v=>v.email===email)) {
+    msgEl.innerHTML = `<div class="msg-box msg-err">Email already registered.</div>`; return;
+  }
+  if (password.length < 6) {
+    msgEl.innerHTML = `<div class="msg-box msg-err">Password must be at least 6 characters.</div>`; return;
+  }
+  const newVendor = { id:'v'+Date.now(), name, mandiName, city, pincode, phone, email, password };
+  vendors.push(newVendor);
+  currentVendor = newVendor;
+  localStorage.setItem('mandibhav_vendor', JSON.stringify(newVendor));
+  updateAuthNav();
+  showToast('Registered successfully! Welcome, ' + name);
+  showPage('dashboard');
+}
+
+function logout() {
+  currentVendor = null;
+  localStorage.removeItem('mandibhav_vendor');
+  updateAuthNav();
+  showPage('home');
+  showToast('Logged out successfully');
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+function renderDashboard() {
+  if (!currentVendor) { showPage('login'); return; }
+  document.getElementById('dash-subtitle').textContent = `${currentVendor.mandiName} · ${currentVendor.city}`;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const myPrices = allPrices.filter(p => {
+    const pd = new Date(p.date); pd.setHours(0,0,0,0);
+    return p.vendorId === currentVendor.id && pd.getTime()===today.getTime();
+  });
+
+  // Deduplicate
+  const seen=new Set(); const deduped=[];
+  myPrices.forEach(p=>{if(!seen.has(p.item)){seen.add(p.item);deduped.push(p);}});
+
+  const avg = deduped.length ? (deduped.reduce((a,b)=>a+b.pricePerKg,0)/deduped.length).toFixed(1) : '—';
+  document.getElementById('dash-stats').innerHTML = [
+    {icon:'📋', val:deduped.length, label:'Items Listed Today'},
+    {icon:'💰', val:deduped.length?`₹${avg}`:'—', label:'Avg Price'},
+    {icon:'✅', val:deduped.filter(p=>p.stock==='available').length, label:'In Stock'}
+  ].map(s=>`<div class="stat-card">
+    <div class="stat-icon">${s.icon}</div>
+    <div class="stat-val">${s.val}</div>
+    <div class="stat-label">${s.label}</div>
+  </div>`).join('');
+
+  renderMyPricesTable(deduped);
+}
+
+function renderMyPricesTable(prices) {
+  const el = document.getElementById('my-prices-table');
+  if (!prices.length) {
+    el.innerHTML = `<div class="empty" style="border:none"><div class="empty-icon">📋</div>
+      <p>No prices posted today.</p>
+      <button class="btn-primary" style="margin-top:12px" onclick="switchTab('add')">Add Your First Price</button></div>`;
+    return;
+  }
+  el.innerHTML = `<table>
+    <thead><tr><th>Item</th><th>Category</th><th>Price</th><th>Unit</th><th>Stock</th><th></th></tr></thead>
+    <tbody>
+      ${prices.map(p=>{
+        const sc=p.stock==='available'?'background:#dcfce7;color:#15803d':p.stock==='limited'?'background:#fef3c7;color:#92400e':'background:#fee2e2;color:#991b1b';
+        return `<tr>
+          <td style="font-weight:600">${p.item}</td>
+          <td style="color:#6b7280">${p.category}</td>
+          <td style="font-weight:700;color:#16a34a;font-size:15px">₹${p.pricePerKg}</td>
+          <td style="color:#6b7280">${p.unit}</td>
+          <td><span class="stock-badge" style="${sc}">${p.stock.replace('_',' ')}</span></td>
+          <td><button onclick="deleteMyPrice('${p.id}')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px">🗑️</button></td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+}
+
+function deleteMyPrice(id) {
+  allPrices = allPrices.filter(p => p.id !== id);
+  renderDashboard();
+  showToast('Price removed');
+}
+
+function publishPrice() {
+  if (!currentVendor) return;
+  const item = document.getElementById('add-item').value.trim();
+  const price = parseFloat(document.getElementById('add-price').value);
+  const category = document.getElementById('add-cat').value;
+  const unit = document.getElementById('add-unit').value;
+  const stock = document.getElementById('add-stock').value;
+  const msgEl = document.getElementById('add-msg');
+
+  if (!item || !price) { msgEl.innerHTML=`<div class="msg-box msg-err">Item name and price are required.</div>`; return; }
+
+  const today = new Date(); today.setHours(8,0,0,0);
+  const newPrice = {
+    id: `${currentVendor.id}-${item}-new-${Date.now()}`,
+    vendorId: currentVendor.id,
+    item, category, pricePerKg: price, unit, stock, date: today
+  };
+  allPrices.push(newPrice);
+
+  // Check and trigger alerts
+  let triggered = 0;
+  alerts.forEach(a => {
+    if (a.item.toLowerCase()===item.toLowerCase() && a.city.toLowerCase()===currentVendor.city.toLowerCase() && price<=a.targetPrice && !a.isTriggered) {
+      a.isTriggered = true; triggered++;
+    }
+  });
+  saveAlerts();
+
+  msgEl.innerHTML=`<div class="msg-box msg-ok">✅ Price published!${triggered?` ${triggered} alert(s) triggered.`:''}</div>`;
+  document.getElementById('add-item').value='';
+  document.getElementById('add-price').value='';
+  renderDashboard();
+  switchTab('prices');
+}
+
+function switchTab(tab) {
+  currentDashTab = tab;
+  document.getElementById('tab-content-prices').classList.toggle('hidden', tab!=='prices');
+  document.getElementById('tab-content-add').classList.toggle('hidden', tab!=='add');
+  document.getElementById('tab-prices').classList.toggle('active', tab==='prices');
+  document.getElementById('tab-add').classList.toggle('active', tab==='add');
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(()=>{ t.style.display='none'; }, 3000);
+}
+
+// ─── BOOT ─────────────────────────────────────────────────────────────────────
+updateAuthNav();
+renderHome();
+</script>
+</body>
+</html>
