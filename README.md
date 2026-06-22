@@ -11,7 +11,7 @@ A zero-setup, single HTML file web app for tracking vegetable and grocery prices
 [![MIT License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 [![Live Demo](https://img.shields.io/badge/🌐_Live-Demo-F97316?style=flat-square)](https://your-username.github.io/mandibhav/mandibhav.html)
 
-[**View Live Demo**](https://your-username.github.io/mandibhav/mandibhav.html) · [**Download HTML**](mandibhav.html) · [**Report Bug**](https://github.com/your-username/mandibhav/issues)
+[**View Live Demo**](https://deekshithagowda9865.github.io/mandibhav/mandibhav.html) · [**Download HTML**](mandibhav.html) · [**Report Bug**](https://github.com/deekshithagowda9865/mandibhav/issues)
 
 </div>
 
